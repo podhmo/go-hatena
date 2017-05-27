@@ -12,8 +12,16 @@ import (
 // Config is mapping object for application config
 type Config struct {
 	DefaultAlias string `json:"default_alias"`
-	AccessToken  string `json:"access_token"`
 	HistFile     string `json:"hist_file"`
+
+	ConsumerKey    string `json:"consumer_key"`
+	ConsumerSecret string `json:"consumer_secret"`
+
+	ClientID     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
+
+	HatenaID string `json:"hatena_id"`
+	BlogID   string `json:"blog_id"`
 }
 
 var (
@@ -49,6 +57,23 @@ func GetConfigDir() (string, error) {
 		}
 	}
 	return defaultConfigDir, errors.Errorf("config directory is not found. (default is ~/.hatena)")
+}
+
+// SaveConfig :
+func SaveConfig(config *Config) error {
+	configDir, err := GetConfigDir()
+	if err != nil {
+		return errors.Errorf("%q is not found (dir)", configDir)
+	}
+	filename := path.Join(configDir, "config.json")
+	f, err := os.OpenFile(filename, os.O_WRONLY, 0)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	encoder := json.NewEncoder(f)
+	encoder.SetIndent("", "  ")
+	return encoder.Encode(config)
 }
 
 // LoadConfig loads configuration file, if configuration file is not existed, then return default config.
