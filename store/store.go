@@ -1,4 +1,4 @@
-package hatena
+package store
 
 import (
 	"bufio"

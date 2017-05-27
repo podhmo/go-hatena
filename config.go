@@ -2,10 +2,11 @@ package hatena
 
 import (
 	"encoding/json"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
 	"path"
+
+	"github.com/pkg/errors"
 )
 
 // Config is mapping object for application config
@@ -61,9 +62,6 @@ func LoadConfig() (*Config, error) {
 
 func loadConfig(d string) (*Config, error) {
 	filename := path.Join(d, "config.json")
-	if _, err := os.Stat(filename); err != nil {
-		return nil, errors.Wrap(err, "stat")
-	}
 	fp, err := os.Open(filename)
 	if err != nil {
 		return nil, errors.Wrap(err, "open")
