@@ -99,7 +99,7 @@ func init() {
   <title>{{.Title.Title}}</title>
   <author><name>name</name></author>
   <content type="text/plain">
-    {{.Body}}
+{{.Body}}
   </content>
 {{range .Title.Categories}}
   <category term="{{.}}" />

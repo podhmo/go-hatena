@@ -12,13 +12,25 @@ var parseRE = regexp.MustCompile("# *((?:\\[[^\\]]+\\])*)? *(.+)")
 // ParseArticle :
 func ParseArticle(body string) (Article, error) {
 	lines := strings.Split(body, "\n")
+	article := Article{}
+	found := false
+	buf := []string{}
+
 	for _, line := range lines {
+		if found {
+			buf = append(buf, line)
+			continue
+		}
 		if topLevelSectionRE.MatchString(line) {
-			title := parseTitle(line)
-			return Article{Title: title, Body: body}, nil
+			article.Title = parseTitle(line)
+			found = true
 		}
 	}
-	return Article{}, errors.New("title is not found")
+	if !found {
+		return article, errors.New("title is not found")
+	}
+	article.Body = strings.Trim(strings.Join(buf, "\n"), "\n")
+	return article, nil
 }
 
 // parseTitle :

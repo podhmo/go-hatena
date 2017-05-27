@@ -23,9 +23,8 @@ func TestParseTitle(t *testing.T) {
 }
 
 func TestParseArticle(t *testing.T) {
-	content := `#[tag1][tag2]タイトル
-
-なんか文章
+	title := `#[tag1][tag2]タイトル`
+	body := `なんか文章
 
 ## トップレベルのセクションはひとつだけ
 
@@ -34,9 +33,9 @@ func TestParseArticle(t *testing.T) {
 ## 見出しにしたい場合はこのレベルにする
 
 はい`
-	article, err := ParseArticle(content)
+	article, err := ParseArticle(title + "\n" + body)
 	require.NoError(t, err)
 	assert.Exactly(t, "タイトル", article.Title.Title)
 	assert.Exactly(t, []string{"tag1", "tag2"}, article.Title.Categories)
-	assert.Exactly(t, content, article.Body)
+	assert.Exactly(t, body, article.Body)
 }
