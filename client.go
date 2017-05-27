@@ -1,15 +1,16 @@
 package hatena
 
 import (
+	"bytes"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"text/template"
+	"time"
 
-	"bytes"
-
-	"github.com/k0kubun/pp"
+	"github.com/pkg/errors"
 	"github.com/podhmo/hatena/article"
 )
 
@@ -60,6 +61,20 @@ type actualClient struct {
 	Auth   func(*http.Request) error
 }
 
+// Link :
+type Link struct {
+	Rel  string `xml:"rel,attr,omitempty"`
+	Href string `xml:"href,attr"`
+}
+
+// Entry :
+type Entry struct {
+	Title   string    `xml:"title"`
+	Id      string    `xml:"id"`
+	Link    []Link    `xml:"link"`
+	Updated time.Time `xml:"updated"`
+}
+
 // Create :
 func (c *actualClient) Create(article article.Article) (string, error) {
 	url := fmt.Sprintf("https://blog.hatena.ne.jp/%s/%s/atom/entry", c.Config.HatenaID, c.Config.BlogID)
@@ -78,16 +93,50 @@ func (c *actualClient) Create(article article.Article) (string, error) {
 	}
 	resp, err := c.Client.Do(req)
 	defer resp.Body.Close()
-	pp.Println(resp.Status)
-	io.Copy(os.Stdout, resp.Body)
-	return "xxx", err
+
+	if resp.StatusCode != http.StatusCreated {
+		io.Copy(os.Stdout, resp.Body)
+		return "", errors.Errorf("something wrong: %s", resp.Status)
+	}
+	fmt.Println(resp.Status)
+	decoder := xml.NewDecoder(resp.Body)
+	var entry Entry
+	err = decoder.Decode(&entry)
+	if err != nil {
+		io.Copy(os.Stdout, resp.Body)
+		return "", errors.Wrap(err, "parse error")
+	}
+	for _, link := range entry.Link {
+		if link.Rel == "edit" {
+			return link.Href, err
+		}
+	}
+	return "", errors.Errorf("hmm.")
 }
 
 // Edit :
-func (c *actualClient) Edit(article article.Article, ID string) (string, error) {
-	fmt.Println("Edit: ")
-	err := tmpl.Execute(os.Stdout, article)
-	return ID, err
+func (c *actualClient) Edit(article article.Article, url string) (string, error) {
+	var buf bytes.Buffer
+	err := tmpl.Execute(&buf, article)
+	if err != nil {
+		return "", err
+	}
+	req, err := http.NewRequest("PUT", url, &buf)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Add("Content-Type", "application/xml; charset=utf-8")
+	if err := c.Auth(req); err != nil {
+		return "", err
+	}
+	resp, err := c.Client.Do(req)
+	defer resp.Body.Close()
+	fmt.Println(resp.Status)
+	if resp.StatusCode != http.StatusOK {
+		io.Copy(os.Stdout, resp.Body)
+		return "", errors.Errorf("something wrong: %s", resp.Status)
+	}
+	return url, err
 }
 
 var tmpl *template.Template
