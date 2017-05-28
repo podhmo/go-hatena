@@ -26,8 +26,8 @@ func NewClient(token, secret string) *Client {
 	}
 }
 
-// Auth :
-func (c *Client) Auth(client *http.Client) (*oauth.Credentials, error) {
+// AuthDance :
+func (c *Client) AuthDance(client *http.Client) (*oauth.Credentials, error) {
 	u := url.Values{}
 	u.Add("scope", "read_private,write_private")
 
@@ -36,12 +36,13 @@ func (c *Client) Auth(client *http.Client) (*oauth.Credentials, error) {
 		return nil, err
 	}
 
-	err = open.Start(c.AuthorizationURL(tempCred, nil))
+	authURL := c.AuthorizationURL(tempCred, nil)
+	err = open.Start(authURL)
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Printf("1. Go to %s\n2. Authorize the application\n3. Enter verification code:\n", "*")
+	fmt.Printf("1. Go to %s\n2. Authorize the application\n3. Enter verification code:\n", authURL)
 	var code string
 	for {
 		fmt.Scanln(&code)

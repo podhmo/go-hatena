@@ -8,4 +8,6 @@ hatena is individual hatena blog client.
 go get github.com/podhmo/hatena/cmd/hatena
 ```
 
-## init settings
+## 使い方
+
+- http://pod.hatenablog.com/entry/2017/05/28/065501

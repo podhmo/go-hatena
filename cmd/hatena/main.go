@@ -26,7 +26,7 @@ func run(filename string, alias string, debug bool, dryRun bool) error {
 	wrap := func(req *http.Request) error {
 		client := auth.NewClient(config.ConsumerKey, config.ConsumerSecret)
 		if config.ClientID == "" || config.ClientSecret == "" {
-			credential, err := client.Auth(httpclient)
+			credential, err := client.AuthDance(httpclient)
 			if err != nil {
 				return err
 			}
