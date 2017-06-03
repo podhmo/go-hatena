@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -104,6 +105,8 @@ func loadConfig(d string) (*Config, error) {
 	if config.HistFile == "" {
 		config.HistFile = path.Join(d, "hatena.history")
 	}
+	config.HistFile = strings.Replace(config.HistFile, "~", os.Getenv("HOME"), 1)
+
 	if config.DefaultAlias == "" {
 		config.DefaultAlias = defaultAlias
 	}
