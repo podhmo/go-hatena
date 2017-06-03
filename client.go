@@ -17,6 +17,7 @@ import (
 
 // Client :
 type Client interface {
+	List() ([]Entry, error)
 	Create(article article.Article) (string, error)
 	Edit(article article.Article, ID string) (string, error)
 }
@@ -39,6 +40,11 @@ func NewClient(hatenaID, blogID string, dryRun bool, client *http.Client, auth f
 // dummyClient :
 type dummyClient struct {
 	Config ClientConfig
+}
+
+// List :
+func (c *dummyClient) List() ([]Entry, error) {
+	return nil, nil
 }
 
 // Create :
@@ -83,6 +89,30 @@ type escapedArticle struct {
 
 func escaped(article *article.Article) *escapedArticle {
 	return &escapedArticle{Article: article, Body: html.EscapeString(article.Body)}
+}
+
+// List :
+func (c *actualClient) List() ([]Entry, error) {
+	url := fmt.Sprintf("https://blog.hatena.ne.jp/%s/%s/atom/entry", c.Config.HatenaID, c.Config.BlogID)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	if err := c.Auth(req); err != nil {
+		return nil, err
+	}
+	resp, err := c.Client.Do(req)
+	defer resp.Body.Close()
+	decoder := xml.NewDecoder(resp.Body)
+	var feed struct {
+		Entries []Entry `xml:"entry"`
+	}
+	err = decoder.Decode(&feed)
+	if err != nil {
+		io.Copy(os.Stdout, resp.Body)
+		return nil, errors.Wrap(err, "parse error")
+	}
+	return feed.Entries, nil
 }
 
 // Create :

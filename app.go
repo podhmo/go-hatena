@@ -1,7 +1,9 @@
 package hatena
 
 import (
+	"encoding/json"
 	"io/ioutil"
+	"os"
 
 	"github.com/pkg/errors"
 	"github.com/podhmo/hatena/article"
@@ -11,6 +13,17 @@ import (
 // App :
 type App struct {
 	Client Client
+}
+
+// ListRecentlyArticles :
+func (app *App) ListRecentlyArticles() error {
+	entries, err := app.Client.List()
+	if err != nil {
+		return errors.Wrap(err, "client")
+	}
+	encoder := json.NewEncoder(os.Stdout)
+	encoder.SetIndent("", "  ")
+	return encoder.Encode(entries)
 }
 
 // CreateArticle :

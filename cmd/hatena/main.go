@@ -11,12 +11,7 @@ import (
 	"github.com/podhmo/hatena/store"
 )
 
-func run(filename string, alias string, debug bool, dryRun bool) error {
-	config, err := hatena.LoadConfig()
-	if err != nil {
-		return err
-	}
-
+func makeApp(config *hatena.Config, debug bool, dryRun bool) *hatena.App {
 	httpclient := http.DefaultClient
 	if debug {
 		httpclient = &http.Client{Transport: &auth.DebugTransport{Base: http.DefaultTransport, Verbose: false}}
@@ -41,6 +36,25 @@ func run(filename string, alias string, debug bool, dryRun bool) error {
 	}
 
 	app := hatena.App{Client: hatena.NewClient(config.HatenaID, config.BlogID, dryRun, httpclient, wrap)}
+	return &app
+}
+
+func list(debug bool, dryRun bool) error {
+	config, err := hatena.LoadConfig()
+	if err != nil {
+		return err
+	}
+	app := makeApp(config, debug, dryRun)
+	return app.ListRecentlyArticles()
+}
+
+func post(filename string, alias string, debug bool, dryRun bool) error {
+	config, err := hatena.LoadConfig()
+	if err != nil {
+		return err
+	}
+	app := makeApp(config, debug, dryRun)
+
 	latest, err := store.LoadCommit(config.HistFile, alias)
 	if err != nil {
 		return err
@@ -65,11 +79,17 @@ func run(filename string, alias string, debug bool, dryRun bool) error {
 var aliasFlag = flag.String("alias", "", "alias name of uploaded gists")
 var debugFlag = flag.Bool("debug", false, "debug")
 var dryRunFlag = flag.Bool("dry-run", false, "dry-run")
+var listFlag = flag.Bool("list", false, "list latest entries")
 
 func main() {
 	flag.Parse()
-	filename := flag.Arg(0)
-	err := run(filename, *aliasFlag, *debugFlag, *dryRunFlag)
+	var err error
+	if *listFlag {
+		err = list(*debugFlag, *dryRunFlag)
+	} else {
+		filename := flag.Arg(0)
+		err = post(filename, *aliasFlag, *debugFlag, *dryRunFlag)
+	}
 	if err != nil {
 		log.Fatal(err)
 	}
