@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/xml"
 	"fmt"
+	"html"
 	"io"
 	"net/http"
 	"os"
@@ -75,11 +76,20 @@ type Entry struct {
 	Updated time.Time `xml:"updated"`
 }
 
+type escapedArticle struct {
+	*article.Article
+	Body string
+}
+
+func escaped(article *article.Article) *escapedArticle {
+	return &escapedArticle{Article: article, Body: html.EscapeString(article.Body)}
+}
+
 // Create :
 func (c *actualClient) Create(article article.Article) (string, error) {
 	url := fmt.Sprintf("https://blog.hatena.ne.jp/%s/%s/atom/entry", c.Config.HatenaID, c.Config.BlogID)
 	var buf bytes.Buffer
-	err := tmpl.Execute(&buf, article)
+	err := tmpl.Execute(&buf, escaped(&article))
 	if err != nil {
 		return "", err
 	}
@@ -117,7 +127,7 @@ func (c *actualClient) Create(article article.Article) (string, error) {
 // Edit :
 func (c *actualClient) Edit(article article.Article, url string) (string, error) {
 	var buf bytes.Buffer
-	err := tmpl.Execute(&buf, article)
+	err := tmpl.Execute(&buf, escaped(&article))
 	if err != nil {
 		return "", err
 	}

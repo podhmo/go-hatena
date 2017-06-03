@@ -6,7 +6,7 @@ type Article struct {
 	Body  string
 }
 
-// Title
+// Title :
 type Title struct {
 	Title      string
 	Categories []string
