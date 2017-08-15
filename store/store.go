@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"strings"
@@ -50,17 +49,19 @@ func loadCommit(r io.Reader, alias string) (*Commit, error) {
 }
 
 // SaveCommit saving uploading history
-func SaveCommit(filename string, c Commit) error {
-	fp, err := ioutil.TempFile("", path.Base(filename))
+func SaveCommit(filename string, c Commit) (err error) {
+	tmppath := path.Join(path.Dir(filename), fmt.Sprintf(".cache.%s", path.Base(filename)))
+	fp, err := os.Create(tmppath)
 	if err != nil {
 		return errors.Wrap(err, "tempfile")
 	}
 	w := bufio.NewWriter(fp)
 	defer func() {
 		w.Flush()
-		tmpname := fp.Name()
 		fp.Close()
-		os.Rename(tmpname, filename)
+		if rErr := os.Rename(tmppath, filename); rErr != nil {
+			err = rErr
+		}
 	}()
 	rp, err := os.Open(filename)
 	if err != nil {

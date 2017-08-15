@@ -63,7 +63,6 @@ func post(filename string, alias string, debug bool, dryRun bool) error {
 	if alias == "" {
 		alias = config.DefaultAlias
 	}
-
 	var commit store.Commit
 	if latest == nil {
 		commit, err = app.CreateArticle(filename, alias)
