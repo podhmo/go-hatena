@@ -6,14 +6,15 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
+	"github.com/podhmo/commithistory"
 	"github.com/podhmo/hatena/article"
-	"github.com/podhmo/hatena/store"
 )
 
 // App :
 type App struct {
 	Client Client
-    Config *Config
+	Config *Config
+	C      *commithistory.Config
 }
 
 // ListRecentlyArticles :
@@ -28,29 +29,29 @@ func (app *App) ListRecentlyArticles() error {
 }
 
 // CreateArticle :
-func (app *App) CreateArticle(filename string, alias string) (store.Commit, error) {
+func (app *App) CreateArticle(filename string, alias string) (*Commit, error) {
 	article, err := app.loadArticle(filename)
 	if err != nil {
-		return store.Commit{}, err
+		return nil, err
 	}
 	id, err := app.Client.Create(article)
 	if err != nil {
-		return store.Commit{}, errors.Wrap(err, "client")
+		return nil, errors.Wrap(err, "client")
 	}
-	return store.NewCommit(id, alias, "create"), nil
+	return NewCommit(id, alias, "create"), nil
 }
 
 // EditArticle :
-func (app *App) EditArticle(filename string, alias string, latestID string) (store.Commit, error) {
+func (app *App) EditArticle(filename string, alias string, latestID string) (*Commit, error) {
 	article, err := app.loadArticle(filename)
 	if err != nil {
-		return store.Commit{}, err
+		return nil, err
 	}
 	id, err := app.Client.Edit(article, latestID)
 	if err != nil {
-		return store.Commit{}, errors.Wrap(err, "client")
+		return nil, errors.Wrap(err, "client")
 	}
-	return store.NewCommit(id, alias, "edit"), nil
+	return NewCommit(id, alias, "edit"), nil
 }
 
 func (app *App) loadArticle(filename string) (article.Article, error) {
