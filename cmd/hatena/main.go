@@ -80,14 +80,17 @@ func post(app *hatena.App, filename string, alias string) error {
 	return app.C.SaveCommit(app.Config.HistFile, commit)
 }
 
-var aliasFlag = flag.String("alias", "", "alias name of uploaded gists")
-var debugFlag = flag.Bool("debug", false, "debug")
-var dryRunFlag = flag.Bool("dry-run", false, "dry-run")
-var listFlag = flag.Bool("list", false, "list latest entries")
+var (
+	aliasFlag   = flag.String("alias", "", "alias name of uploaded gists")
+	debugFlag   = flag.Bool("debug", false, "debug")
+	dryRunFlag  = flag.Bool("dry-run", false, "dry-run")
+	listFlag    = flag.Bool("list", false, "list latest entries")
+	profileFlag = flag.String("profile", "", "using another profile")
+)
 
 func run() error {
 	flag.Parse()
-	c := commithistory.New("hatena")
+	c := commithistory.New("hatena", commithistory.WithProfile(*profileFlag))
 	config, err := hatena.LoadConfig(c)
 	if err != nil {
 		return err
