@@ -1,13 +1,8 @@
 package hatena
 
 import (
-	"encoding/json"
-	"io/ioutil"
-	"os"
-	"path"
-	"strings"
-
 	"github.com/pkg/errors"
+	"github.com/podhmo/commithistory"
 )
 
 // Config is mapping object for application config
@@ -25,90 +20,35 @@ type Config struct {
 	BlogID   string `json:"blog_id"`
 }
 
-var (
-	defaultConfigDir string
-	defaultAlias     string
+const (
+	defaultAlias    = "head"
+	defaultHistFile = "hatena.history"
 )
 
-func init() {
-	defaultConfigDir = path.Join(os.Getenv("HOME"), ".hatena")
-	defaultAlias = "head"
-	// fmt.Printf("history: %q, alias: %q\n", defaultHistFile, defaultAlias)
-}
-
-// Dirs returns config-directory's candidates
-func Dirs() []string {
-	candidates := []string{".", os.Getenv("HOME")}
-	return dirs(candidates)
-}
-
-func dirs(candidates []string) []string {
-	var paths []string
-	for _, d := range candidates {
-		paths = append(paths, path.Join(d, ".hatena"))
+// ResolveAlias :
+func (c *Config) ResolveAlias(alias string) string {
+	if alias == "" {
+		return c.DefaultAlias
 	}
-	return append(paths, defaultConfigDir)
+	return alias
 }
 
-// GetConfigDir returns a path of config directory
-func GetConfigDir() (string, error) {
-	for _, path := range Dirs() {
-		if _, err := os.Stat(path); err == nil {
-			return path, nil
-		}
+// LoadConfig :
+func LoadConfig(c *commithistory.Config) (*Config, error) {
+	var conf Config
+	if err := c.Load("config.json", &conf); err != nil {
+		return nil, errors.Wrap(err, "load config")
 	}
-	return defaultConfigDir, errors.Errorf("config directory is not found. (default is ~/.hatena)")
+	if conf.DefaultAlias == "" {
+		conf.DefaultAlias = defaultAlias
+	}
+	if conf.HistFile == "" {
+		conf.HistFile = defaultHistFile
+	}
+	return &conf, nil
 }
 
 // SaveConfig :
-func SaveConfig(config *Config) error {
-	configDir, err := GetConfigDir()
-	if err != nil {
-		return errors.Errorf("%q is not found (dir)", configDir)
-	}
-	filename := path.Join(configDir, "config.json")
-	f, err := os.OpenFile(filename, os.O_WRONLY, 0)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	encoder := json.NewEncoder(f)
-	encoder.SetIndent("", "  ")
-	return encoder.Encode(config)
-}
-
-// LoadConfig loads configuration file, if configuration file is not existed, then return default config.
-func LoadConfig() (*Config, error) {
-	configDir, err := GetConfigDir()
-	if err != nil {
-		return nil, errors.Errorf("%q is not found (dir)", configDir)
-	}
-	return loadConfig(configDir)
-}
-
-func loadConfig(d string) (*Config, error) {
-	filename := path.Join(d, "config.json")
-	fp, err := os.Open(filename)
-	if err != nil {
-		return nil, errors.Wrap(err, "open")
-	}
-	defer fp.Close()
-
-	data, err := ioutil.ReadAll(fp)
-	if err != nil {
-		return nil, errors.Wrap(err, "read all")
-	}
-
-	config := Config{}
-	json.Unmarshal(data, &config)
-
-	if config.HistFile == "" {
-		config.HistFile = path.Join(d, "hatena.history")
-	}
-	config.HistFile = strings.Replace(config.HistFile, "~", os.Getenv("HOME"), 1)
-
-	if config.DefaultAlias == "" {
-		config.DefaultAlias = defaultAlias
-	}
-	return &config, nil
+func SaveConfig(c *commithistory.Config, config *Config) error {
+	return c.Save("config.json", config)
 }
