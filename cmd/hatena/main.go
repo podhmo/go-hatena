@@ -35,33 +35,24 @@ func makeApp(config *hatena.Config, debug bool, dryRun bool) *hatena.App {
 		return nil
 	}
 
-	app := hatena.App{Client: hatena.NewClient(config.HatenaID, config.BlogID, dryRun, httpclient, wrap)}
-	return &app
+	return &hatena.App{
+		Client: hatena.NewClient(config.HatenaID, config.BlogID, dryRun, httpclient, wrap),
+		Config: config,
+	}
 }
 
-func list(debug bool, dryRun bool) error {
-	config, err := hatena.LoadConfig()
-	if err != nil {
-		return err
-	}
-	app := makeApp(config, debug, dryRun)
+func list(app *hatena.App) error {
 	return app.ListRecentlyArticles()
 }
 
-func post(filename string, alias string, debug bool, dryRun bool) error {
-	config, err := hatena.LoadConfig()
-	if err != nil {
-		return err
-	}
-	app := makeApp(config, debug, dryRun)
-
-	latest, err := store.LoadCommit(config.HistFile, alias)
+func post(app *hatena.App, filename string, alias string) error {
+	latest, err := store.LoadCommit(app.Config.HistFile, alias)
 	if err != nil {
 		return err
 	}
 
 	if alias == "" {
-		alias = config.DefaultAlias
+		alias = app.Config.DefaultAlias
 	}
 	var commit store.Commit
 	if latest == nil {
@@ -72,7 +63,7 @@ func post(filename string, alias string, debug bool, dryRun bool) error {
 	if err != nil {
 		return err
 	}
-	return store.SaveCommit(config.HistFile, commit)
+	return store.SaveCommit(app.Config.HistFile, commit)
 }
 
 var aliasFlag = flag.String("alias", "", "alias name of uploaded gists")
@@ -80,16 +71,23 @@ var debugFlag = flag.Bool("debug", false, "debug")
 var dryRunFlag = flag.Bool("dry-run", false, "dry-run")
 var listFlag = flag.Bool("list", false, "list latest entries")
 
-func main() {
+func run() error {
 	flag.Parse()
-	var err error
-	if *listFlag {
-		err = list(*debugFlag, *dryRunFlag)
-	} else {
-		filename := flag.Arg(0)
-		err = post(filename, *aliasFlag, *debugFlag, *dryRunFlag)
-	}
+	config, err := hatena.LoadConfig()
 	if err != nil {
+		return err
+	}
+	app := makeApp(config, *debugFlag, *dryRunFlag)
+	if *listFlag {
+		return list(app)
+	}
+
+	filename := flag.Arg(0)
+	return post(app, filename, *aliasFlag)
+}
+
+func main() {
+	if err := run(); err != nil {
 		log.Fatal(err)
 	}
 }

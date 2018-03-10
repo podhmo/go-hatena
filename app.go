@@ -13,6 +13,7 @@ import (
 // App :
 type App struct {
 	Client Client
+    Config *Config
 }
 
 // ListRecentlyArticles :
