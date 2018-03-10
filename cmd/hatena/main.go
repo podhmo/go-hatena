@@ -2,8 +2,10 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/garyburd/go-oauth/oauth"
 	"github.com/pkg/errors"
@@ -90,6 +92,11 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	if config.ConsumerKey == "" {
+		fmt.Println("please setup consumekey")
+		os.Exit(1)
+	}
+
 	app := makeApp(c, config, *debugFlag, *dryRunFlag)
 	if *listFlag {
 		return list(app)
