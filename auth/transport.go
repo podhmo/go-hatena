@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"os"
-
-	"github.com/k0kubun/pp"
 )
 
 // DebugTransport :
@@ -22,7 +20,6 @@ func (t *DebugTransport) RoundTrip(request *http.Request) (*http.Response, error
 		return nil, err
 	}
 	fmt.Fprintln(os.Stderr, string(b))
-	pp.Println(request)
 	response, err := t.Base.RoundTrip(request)
 	if err != nil {
 		return nil, err
